@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Popup Message Editor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f4f6f8;
+    }
+
+    h2 {
+      color: #333;
+    }
+
+    label, select, textarea, button {
+      display: block;
+      width: 100%;
+      margin-bottom: 15px;
+    }
+
+    textarea {
+      height: 150px;
+      padding: 10px;
+      font-size: 14px;
+    }
+
+    button {
+      padding: 10px;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    #saveBtn {
+      background: #3498db;
+    }
+
+    #saveBtn:hover {
+      background: #2980b9;
+    }
+
+    #previewBtn {
+      background: #2ecc71;
+    }
+
+    #previewBtn:hover {
+      background: #27ae60;
+    }
+
+    .message {
+      color: green;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Edit Custom Popup Message</h2>
+
+  <label for="userSelect">Select User:</label>
+  <select id="userSelect"></select>
+
+  <label for="popupMessage">Popup Message:</label>
+  <textarea id="popupMessage" placeholder="Enter custom popup message for the selected user..."></textarea>
+
+  <button id="previewBtn">Preview Popup</button>
+  <button id="saveBtn">Save Message</button>
+  <p class="message" id="saveStatus"></p>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBK5UM0n8-GLvleW7l6B8Hi-_WuC64QA4U",
+      authDomain: "scores-b25a7.firebaseapp.com",
+      databaseURL: "https://scores-b25a7-default-rtdb.firebaseio.com",
+      projectId: "scores-b25a7",
+      storageBucket: "scores-b25a7.appspot.com",
+      messagingSenderId: "1001957936318",
+      appId: "1:1001957936318:web:90fdfb367f82f6a3d8e2ef"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+
+    const userSelect = document.getElementById("userSelect");
+    const popupMessage = document.getElementById("popupMessage");
+    const saveBtn = document.getElementById("saveBtn");
+    const saveStatus = document.getElementById("saveStatus");
+    const previewBtn = document.getElementById("previewBtn");
+
+    const loadUsers = async () => {
+      const snapshot = await firebase.database().ref("users").once("value");
+      const users = snapshot.val();
+      userSelect.innerHTML = "";
+
+      for (const uid in users) {
+        const option = document.createElement("option");
+        option.value = uid;
+        option.text = users[uid].username || "Unnamed User";
+        userSelect.appendChild(option);
+      }
+
+      if (userSelect.value) {
+        loadMessageForUser(userSelect.value);
+      }
+    };
+
+    const loadMessageForUser = (uid) => {
+      firebase.database().ref("users/" + uid).once("value").then(snapshot => {
+        const data = snapshot.val();
+        popupMessage.value = data?.customPopupMessage || "";
+      });
+    };
+
+    userSelect.addEventListener("change", () => {
+      loadMessageForUser(userSelect.value);
+    });
+
+    saveBtn.addEventListener("click", () => {
+      const uid = userSelect.value;
+      const message = popupMessage.value;
+
+      firebase.database().ref("users/" + uid).update({
+        customPopupMessage: message
+      }).then(() => {
+        saveStatus.textContent = "Message saved successfully!";
+        setTimeout(() => (saveStatus.textContent = ""), 3000);
+      });
+    });
+
+    previewBtn.addEventListener("click", () => {
+      const message = popupMessage.value.trim();
+      alert(message || "No message to show.");
+    });
+
+    loadUsers();
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,312 @@
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: #f4f6f8;
+  }
+
+  .section {
+    background-color: #fff;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+
+  .form-group {
+    margin-bottom: 15px;
+  }
+
+  .form-group label {
+    font-weight: bold;
+    display: block;
+  }
+
+  .form-group input {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+  }
+
+  select {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+  }
+
+  button {
+    padding: 10px 20px;
+    background-color: #15317E;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
+  button:hover {
+    background-color: #2980b9;
+  }
+
+  .message {
+    margin-top: 20px;
+    color: green;
+  }
+
+  .error-message {
+    margin-top: 20px;
+    color: red;
+  }
+
+  .transaction-table th, .transaction-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+  }
+
+  .transaction-table th {
+    background-color: #15317E;
+    color: white;
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 10px;
+  }
+
+  .action-buttons button {
+    background-color: #e74c3c;
+  }
+
+  .action-buttons button.edit {
+    background-color: #f39c12;
+  }
+</style>
+
+<h2>Create/Modify Transaction</h2>
+
+<div class="section">
+  <div class="form-group">
+    <label for="userDropdown">Select User:</label>
+    <select id="userDropdown">
+      <option value="">Loading users...</option>
+    </select>
+  </div>
+
+  <div id="createTransactionForm" style="display:none;">
+    <form id="createTransaction">
+      <div class="form-group">
+        <label for="transactionType">Transaction Type:</label>
+        <input type="text" id="transactionType" name="transactionType" required />
+      </div>
+      <div class="form-group">
+        <label for="transactionAmount">Amount:</label>
+        <input type="text" id="transactionAmount" name="transactionAmount" required />
+      </div>
+      <div class="form-group">
+        <label for="transactionStatus">Status:</label>
+        <input type="text" id="transactionStatus" name="transactionStatus" required />
+      </div>
+      <div class="form-group">
+        <label for="transactionDate">Date Paid:</label>
+        <input type="text" id="transactionDate" name="transactionDate" required />
+      </div>
+      <button type="submit">Create Transaction</button>
+    </form>
+  </div>
+
+  <div class="message" id="message"></div>
+  <div class="error-message" id="errorMessage"></div>
+</div>
+
+<h3>Transaction History</h3>
+
+<table class="transaction-table" id="transactionHistoryTable">
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Amount</th>
+      <th>Status</th>
+      <th>Date Paid</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody id="transactionHistoryBody">
+    <!-- Transactions will be populated here -->
+  </tbody>
+</table>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyBK5UM0n8-GLvleW7l6B8Hi-_WuC64QA4U",
+    authDomain: "scores-b25a7.firebaseapp.com",
+    databaseURL: "https://scores-b25a7-default-rtdb.firebaseio.com",
+    projectId: "scores-b25a7",
+    storageBucket: "scores-b25a7.appspot.com",
+    messagingSenderId: "1001957936318",
+    appId: "1:1001957936318:web:90fdfb367f82f6a3d8e2ef"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+
+  let currentTransactionId = null; // To store the ID of the transaction being edited
+
+  // Fetch all users
+  firebase.auth().onAuthStateChanged(function(user) {
+    if (user) {
+      const uid = user.uid;
+
+      // Get the list of all users
+      firebase.database().ref("users").once("value").then(snapshot => {
+        const users = snapshot.val();
+        const userDropdown = document.getElementById("userDropdown");
+        userDropdown.innerHTML = '<option value="">Select a user</option>'; // Clear current options
+
+        for (const userId in users) {
+          const user = users[userId];
+          const option = document.createElement("option");
+          option.value = userId;
+          option.textContent = user.username || userId;  // Display the username or user ID
+          userDropdown.appendChild(option);
+        }
+      });
+
+      // When a user is selected, fetch their transactions
+      document.getElementById("userDropdown").addEventListener("change", function() {
+        const selectedUserId = this.value;
+
+        if (selectedUserId) {
+          // Enable the form to create new transaction
+          document.getElementById("createTransactionForm").style.display = "block";
+
+          // Fetch the transactions for the selected user
+          firebase.database().ref("users/" + selectedUserId + "/transactions").once("value").then(snapshot => {
+            const transactions = snapshot.val();
+            const transactionHistoryTable = document.getElementById("transactionHistoryTable");
+            const transactionHistoryBody = document.getElementById("transactionHistoryBody");
+            transactionHistoryBody.innerHTML = "";  // Clear the table
+
+            if (transactions) {
+              let transactionHistoryHtml = '';
+              for (const transactionKey in transactions) {
+                const transaction = transactions[transactionKey];
+                transactionHistoryHtml += `
+                  <tr data-transaction-id="${transactionKey}">
+                    <td>${transaction.type || 'N/A'}</td>
+                    <td>$${parseFloat(transaction.amount).toFixed(2)}</td>
+                    <td>${transaction.status || 'N/A'}</td>
+                    <td>${transaction.datePaid || 'N/A'}</td>
+                    <td>
+                      <div class="action-buttons">
+                        <button class="edit" onclick="editTransaction('${selectedUserId}', '${transactionKey}')">Edit</button>
+                        <button class="delete" onclick="deleteTransaction('${selectedUserId}', '${transactionKey}')">Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                `;
+              }
+              transactionHistoryBody.innerHTML = transactionHistoryHtml;
+            } else {
+              transactionHistoryBody.innerHTML = '<tr><td colspan="5">No transactions found.</td></tr>';
+            }
+          });
+        } else {
+          document.getElementById("createTransactionForm").style.display = "none"; // Hide the form if no user is selected
+        }
+      });
+
+      // Handle new transaction creation
+      document.getElementById("createTransaction").addEventListener("submit", function(e) {
+        e.preventDefault();
+
+        const selectedUserId = document.getElementById("userDropdown").value;
+        const type = document.getElementById("transactionType").value.trim();
+        const amount = parseFloat(document.getElementById("transactionAmount").value.trim());
+        const status = document.getElementById("transactionStatus").value.trim();
+        const datePaid = document.getElementById("transactionDate").value.trim();
+
+        if (isNaN(amount) || amount <= 0) {
+          alert("Please enter a valid amount.");
+          return;
+        }
+
+        if (currentTransactionId) {
+          // Update the existing transaction
+          firebase.database().ref("users/" + selectedUserId + "/transactions/" + currentTransactionId).update({
+            type: type,
+            amount: amount,
+            status: status,
+            datePaid: datePaid
+          }).then(() => {
+            document.getElementById("message").textContent = "Transaction updated successfully!";
+            resetForm();
+          }).catch((error) => {
+            document.getElementById("errorMessage").textContent = "Error updating transaction: " + error.message;
+          });
+        } else {
+          // Add a new transaction
+          const newTransactionRef = firebase.database().ref("users/" + selectedUserId + "/transactions").push();
+          newTransactionRef.set({
+            type: type,
+            amount: amount,
+            status: status,
+            datePaid: datePaid
+          }).then(() => {
+            document.getElementById("message").textContent = "Transaction created successfully!";
+            resetForm();
+          }).catch((error) => {
+            document.getElementById("errorMessage").textContent = "Error creating transaction: " + error.message;
+          });
+        }
+      });
+
+      // Reset form and state after creating or updating a transaction
+      function resetForm() {
+        currentTransactionId = null;
+        document.getElementById("createTransaction").reset();
+        document.getElementById("userDropdown").dispatchEvent(new Event("change"));
+      }
+
+      // Handle transaction edit
+      window.editTransaction = function(userId, transactionId) {
+        const transactionRef = firebase.database().ref("users/" + userId + "/transactions/" + transactionId);
+        transactionRef.once("value").then(snapshot => {
+          const transaction = snapshot.val();
+          if (transaction) {
+            document.getElementById("transactionType").value = transaction.type;
+            document.getElementById("transactionAmount").value = transaction.amount;
+            document.getElementById("transactionStatus").value = transaction.status;
+            document.getElementById("transactionDate").value = transaction.datePaid;
+
+            // Store the current transaction ID
+            currentTransactionId = transactionId;
+
+            // Change the submit button to "Update Transaction"
+            const createButton = document.querySelector("button[type='submit']");
+            createButton.textContent = "Update Transaction";
+          }
+        });
+      };
+
+      // Handle transaction deletion
+      window.deleteTransaction = function(userId, transactionId) {
+        const transactionRef = firebase.database().ref("users/" + userId + "/transactions/" + transactionId);
+        transactionRef.remove().then(() => {
+          document.getElementById("message").textContent = "Transaction deleted successfully!";
+          // Re-fetch transaction history
+          document.getElementById("userDropdown").dispatchEvent(new Event("change"));
+        }).catch((error) => {
+          document.getElementById("errorMessage").textContent = "Error deleting transaction: " + error.message;
+        });
+      };
+    }
+  });
+</script>

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin Dashboard</title>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    /* Styles as previous, you can keep it the same */
+  </style>
+</head>
+<body>
+  <h2>Dashboard</h2>
+  <div class="header">
+    <button onclick="window.location.href='explore.html'">Go to Explore</button>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th><th>Email</th><th>Phone</th><th>Business</th>
+        <th>Approve</th><th>Check</th><th>Confirmation</th><th>Approved Amount</th><th>Activate Account</th>
+      </tr>
+    </thead>
+    <tbody id="userTable"></tbody>
+  </table>
+
+  <script>
+    const config = {
+      apiKey: "AIzaSyBK5UM0n8-GLvleW7l6B8Hi-_WuC64QA4U",
+      authDomain: "scores-b25a7.firebaseapp.com",
+      databaseURL: "https://scores-b25a7-default-rtdb.firebaseio.com",
+      projectId: "scores-b25a7",
+    };
+
+    firebase.initializeApp(config);
+
+    const tableBody = document.getElementById("userTable");
+
+    firebase.database().ref("users").on("value", snapshot => {
+      tableBody.innerHTML = ""; // Clear table before reloading
+      snapshot.forEach(child => {
+        const user = child.val();
+        const uid = child.key;
+
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td data-label="Name">${user.username}</td>
+          <td data-label="Email">${user.email}</td>
+          <td data-label="Phone">${user.phone}</td>
+          <td data-label="Business">${user.business}</td>
+          <td data-label="Approve">
+            <button onclick="setField('${uid}', 'approved', 'Yes')">Approve</button>
+            <button onclick="setField('${uid}', 'approved', 'No')">Reject</button>
+          </td>
+          <td data-label="Check">
+            <button onclick="setField('${uid}', 'checkStatus', 'Submitted')">Submit</button>
+            <button onclick="setField('${uid}', 'checkStatus', 'Not Submitted')">Reset</button>
+          </td>
+          <td data-label="Confirmation">
+            <button onclick="setField('${uid}', 'finalStatus', 'Confirmed')">Confirm</button>
+            <button onclick="setField('${uid}', 'finalStatus', 'Rejected')">Reject</button>
+          </td>
+          <td data-label="Approved Amount">
+            <input type="number" id="approvedAmount_${uid}" placeholder="Enter Amount" />
+            <button onclick="setApprovedAmount('${uid}')">Set Amount</button>
+          </td>
+          <td data-label="Activate Account">
+            <button onclick="activateAccount('${uid}')">Activate Account</button>
+          </td>
+        `;
+        tableBody.appendChild(row);
+      });
+    });
+
+    function setField(uid, field, value) {
+      firebase.database().ref("users/" + uid + "/" + field).set(value).then(() => {
+        alert(`${field} set to "${value}"`);
+      });
+    }
+
+    function setApprovedAmount(uid) {
+      const amount = document.getElementById(`approvedAmount_${uid}`).value;
+      if (amount) {
+        firebase.database().ref("users/" + uid + "/approvedAmount").set(amount).then(() => {
+          alert(`Approved amount set to ${amount}`);
+        });
+      } else {
+        alert("Please enter a valid amount.");
+      }
+    }
+
+    function activateAccount(uid) {
+      firebase.database().ref("users/" + uid + "/status").set("activated").then(() => {
+        window.location.href = "withdrawer.html?uid=" + uid;  // Redirect to Withdrawer page
+      });
+    }
+  </script>
+</body>
+</html>

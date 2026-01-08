@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caution</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f8d7da;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        .caution-container {
+            text-align: center;
+            background-color: #ffffff;
+            border: 2px solid #f5c2c7;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 2s ease-in-out;
+        }
+        .caution-text {
+            color: #721c24;
+            font-size: 24px;
+            font-weight: bold;
+            animation: blink 1s infinite;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        .warning-icon {
+            font-size: 50px;
+            color: #f5c2c7;
+            animation: shake 0.5s infinite alternate;
+        }
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            50% { transform: translateX(-10px); }
+            100% { transform: translateX(10px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="caution-container">
+        <div class="warning-icon">⚠️</div>
+        <div class="caution-text">You have exceeded the number of withdrawal trials. Your grants may be affected.</div>
+    </div>
+</body>
+</html>
